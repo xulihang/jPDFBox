@@ -5,7 +5,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDResources;
+import org.apache.pdfbox.pdmodel.graphics.PDXObject;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 import anywheresoftware.b4a.BA.ShortName;
 import anywheresoftware.b4a.BA.Version;
@@ -34,6 +39,23 @@ public class PDFBoxWrapper {
 		for (BufferedImage img : PDF2Image.RenderToImages(document, dpi)) {
 			fxImgs.add(SwingFXUtils.toFXImage(img,null));
 		}
+		return fxImgs;
+	}
+	
+	public List<Image> ExtractImagesOfOnePage(int pageIndex) throws IOException{		
+		List<Image> fxImgs = new ArrayList<Image>();
+		PDPage page = document.getPage(pageIndex);
+		PDResources pdResources = page.getResources();
+        for (COSName cosName:pdResources.getXObjectNames()){ 
+	        if (cosName != null) {
+	            PDXObject image = pdResources.getXObject(cosName);
+	            if(image instanceof PDImageXObject){
+	                PDImageXObject pdImage = (PDImageXObject)image;
+	                BufferedImage imageStream = pdImage.getImage();
+	                fxImgs.add(SwingFXUtils.toFXImage(imageStream,null));
+	            }
+	        }
+        }
 		return fxImgs;
 	}
 
