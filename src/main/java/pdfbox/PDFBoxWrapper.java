@@ -23,7 +23,7 @@ import pdfbox.PDF2Image;
  * PDFBOX
  */
 @ShortName("PDFBox")
-@Version(1.10f)
+@Version(1.20f)
 public class PDFBoxWrapper {
 	public PDDocument document;
 	public void Initialize(String filePath) throws IOException {
