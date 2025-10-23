@@ -1,20 +1,27 @@
 package pdfbox;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.*;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.pdmodel.graphics.state.RenderingMode;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 
+
 public class SearchablePDFCreator {
-	
-	public static PDFont loadFont(PDDocument doc, String path) throws IOException {
-		PDFont font = PDType0Font.load(doc, new File(path));
-		return font;
-	}
-	
+
+    public static PDFont loadFont(PDDocument doc, String path) throws IOException {
+        PDFont font = PDType0Font.load(doc, new File(path));
+        return font;
+    }
+
     /**
      * Add text overlay to an existing PDF page
      * @param contentStream - PDF content stream
@@ -32,7 +39,7 @@ public class SearchablePDFCreator {
      * @param pdFont - Specify a font for evaluation of the position
      */
     public static void addTextOverlay(PDPageContentStream contentStream,OCRResult result, double pageHeight, PDFont pdFont) throws IOException {
-        addTextOverlay(contentStream,result,pageHeight,pdFont,1.0);
+        addTextOverlay(contentStream,result,pageHeight,pdFont,1.0,false);
     }
     /**
      * Add text overlay to an existing PDF page
@@ -42,10 +49,16 @@ public class SearchablePDFCreator {
      * @param pdFont - Specify a font for evaluation of the position
      * @param percent - image's height / page's height
      */
-    public static void addTextOverlay(PDPageContentStream contentStream,OCRResult result, double pageHeight, PDFont pdFont,double percent) throws IOException {
+    public static void addTextOverlay(PDPageContentStream contentStream,OCRResult result, double pageHeight, PDFont pdFont,double percent,boolean displayText) throws IOException {
         PDFont font = pdFont;
         contentStream.setFont(font, 16);
-        contentStream.setRenderingMode(RenderingMode.NEITHER);
+
+        if (displayText) {
+            contentStream.setRenderingMode(RenderingMode.FILL);
+        }else{
+            contentStream.setRenderingMode(RenderingMode.NEITHER);
+        }
+
         for (int i = 0; i <result.lines.size() ; i++) {
             TextLine line = result.lines.get(i);
             FontInfo fi = calculateFontSize(font,line.text, (float) (line.width * percent), (float) (line.height * percent));
