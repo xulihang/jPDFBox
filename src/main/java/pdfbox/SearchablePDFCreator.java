@@ -27,32 +27,36 @@ public class SearchablePDFCreator {
      * @param contentStream - PDF content stream
      * @param result - OCR result
      * @param pageHeight - Height of the image
+     * @param page - PDPage
      */
-    public static void addTextOverlay(PDPageContentStream contentStream,OCRResult result, double pageHeight) throws IOException {
-        addTextOverlay(contentStream,result,pageHeight,PDType1Font.TIMES_ROMAN);
+    public static void addTextOverlay(PDPageContentStream contentStream,OCRResult result, double pageHeight, PDPage page) throws IOException {
+        addTextOverlay(contentStream,result,pageHeight,page,PDType1Font.TIMES_ROMAN);
     }
     /**
      * Add text overlay to an existing PDF page
      * @param contentStream - PDF content stream
      * @param result - OCR result
      * @param pageHeight - Height of the image
+     * @param page - PDPage
      * @param pdFont - Specify a font for evaluation of the position
      */
-    public static void addTextOverlay(PDPageContentStream contentStream,OCRResult result, double pageHeight, PDFont pdFont) throws IOException {
-        addTextOverlay(contentStream,result,pageHeight,pdFont,1.0,false);
+    public static void addTextOverlay(PDPageContentStream contentStream,OCRResult result, double pageHeight, PDPage page, PDFont pdFont) throws IOException {
+        addTextOverlay(contentStream,result,pageHeight,page,pdFont,1.0,false);
     }
     /**
      * Add text overlay to an existing PDF page
      * @param contentStream - PDF content stream
      * @param result - OCR result
      * @param pageHeight - Height of the image
+     * @param page - PDPage
      * @param pdFont - Specify a font for evaluation of the position
      * @param percent - image's height / page's height
      */
-    public static void addTextOverlay(PDPageContentStream contentStream,OCRResult result, double pageHeight, PDFont pdFont,double percent,boolean displayText) throws IOException {
+    public static void addTextOverlay(PDPageContentStream contentStream,OCRResult result, double pageHeight, PDPage page, PDFont pdFont,double percent,boolean displayText) throws IOException {
         PDFont font = pdFont;
         contentStream.setFont(font, 16);
-
+        float pageWidth = page.getMediaBox().getWidth();
+        float pageHeightPdf = page.getMediaBox().getHeight();
         if (displayText) {
             contentStream.setRenderingMode(RenderingMode.FILL);
         }else{
@@ -62,9 +66,28 @@ public class SearchablePDFCreator {
         for (int i = 0; i <result.lines.size() ; i++) {
             TextLine line = result.lines.get(i);
             FontInfo fi = calculateFontSize(font,line.text, (float) (line.width * percent), (float) (line.height * percent));
+            float x = (float)(line.left * percent);
+            float y = (float)((pageHeight - line.top - line.height) * percent);
+
+            if (x < 0) x = 0;
+
+            float maxWidth = pageWidth - x;
+            if (fi.textWidth > maxWidth) {
+                System.out.println("Adjusted font size to fit width. Previous size: " + fi.fontSize);
+                fi.fontSize = (int)(fi.fontSize * (maxWidth / fi.textWidth));
+                System.out.println("Adjusted font size to fit width. Adjusted size: " + fi.fontSize);
+                fi.textWidth = font.getStringWidth(line.text)/1000 * fi.fontSize;
+            }
+
+            if (y < 0) y = 0;
+
+            if (y + fi.textHeight > pageHeightPdf) {
+                y = pageHeightPdf - fi.textHeight;
+            }
+
             contentStream.beginText();
             contentStream.setFont(font, fi.fontSize);
-            contentStream.newLineAtOffset((float) (line.left * percent), (float) ((pageHeight - line.top - line.height) * percent));
+            contentStream.newLineAtOffset(x, y);
             contentStream.showText(line.text);
             contentStream.endText();
         }
